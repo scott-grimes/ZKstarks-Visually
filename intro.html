@@ -10,23 +10,6 @@ canvas {
 </style>
 <script>
 
-// - Being able to drag would be really cute but irrelevant for our
-// purposes.
-// - Unclear if it's better to make the user click an edge
-// or have them click two nodes.  The latter has less clicks, but
-// they be more annoying and less intuitive.
-
-// Naming conventions:
-//      ALL_CAPS for constant global data
-//      globalVar for mutable global data per entire application
-//      gVar for mutable global data per graph
-//
-// Stylistic convention:
-//      Never use a traditional 'for' loop, they don't handle variable
-//      closure correctly. Always use a higher-order function.
-
-// Data
-
 var POINTS_1 = {
   'a': [300,40],
   'b': [119,187],
@@ -163,7 +146,7 @@ var DOT_2 = [
   ['l', 'j'],
 ];
 
-var COLORS = ['MediumBlue', 'DarkOrchid', 'DarkTurquoise'];
+var COLORS = ['Blue', 'Red', 'Green'];
 // small number of permutations, so just list them all:
 var PERMUTATIONS = [[0,1,2], [0,2,1], [1,0,2], [1,2,0], [2,0,1], [2,1,0]];
 
@@ -180,9 +163,7 @@ function mk(n) {
 };
 function get(id) { return document.getElementById(id); }
 function letp(args, f) {
-  // fake let-bindings. This gives us true variables which
-  // we can close over. DO NOT close over 'var'.  Prefix all
-  // closed over arguments to f with 'l'.
+  // fake let-bindings.
   f.apply(this, args);
 };
 function mapWithKey(obj, f) {
@@ -265,11 +246,6 @@ function reschedule(n, f) {
 // Then the best a cheater can do is provide you with a coloring that
 // has one edge which is "bad".  The probability of getting that edge
 // is then 1/E.
-
-// Side-effect: When this is called, it obliterates all previous state.
-// Variables declared at the beginning should be easy to fix; DOM state
-// needs to be manually reset, however.  This doesn't seem to cause
-// flicker, so hopefully it's not too much of a problem.
 function main() {
   // construct svg on the fly
   var gMain = get("main");
@@ -341,10 +317,6 @@ function main() {
       shape.setAttribute("fill", "grey");
     };
     shape.selected = 0;
-    // a question of great philosophical importance...
-    // should the true color or the permuted color be stored!
-    // it's all implementation details, but the user might
-    // feel cheated if they look at the source...
     shape.color = gPerm[gColors[gEquivalence[ptname]]];
     shape.reveal = function() {
       if (!shape.revealed) {
@@ -455,50 +427,70 @@ function main() {
 <body onload="init()" style="font-family: Verdana;">
   <table id="controls" style="margin-left: auto; margin-right: auto;width:600px;">
   <tbody><tr><td colspan="3">
-  <h1>Interactive zero knowledge 3-colorability demonstration</h1>
-  <p>This is an interactive demonstration of the <a href="http://en.wikipedia.org/wiki/Zero-knowledge_proof">zero knowledge proof
-    protocol</a> for 3-colorable graphs.  Zero-knowledge proofs permit
-  you to convince a <em>verifier</em> of the truth of a fact (namely,
-  that a graph is three colorable), without revealing the actual three
-  coloring of the graph.</p>
-  <p>This application allows you to play the game as a verifier.  The
-  application (the prover) offers you a graph whose colorings are
-  obscured from you, and you are allowed to pick an edge, which the
-  verifier will reveal the coloring of.  Select a graph and
-  try clicking on some edges.</p>
+  <h1>Zero Knowledge Proof</h1>
+  <p>Below is an interactive demonstration of a <a href="http://en.wikipedia.org/wiki/Zero-knowledge_proof">zero knowledge proof
+    protocol</a>. 
+ZK proofs allow a "prover" to convince a "verifier" that they have the solution to some problem, without revealing their actual solution. In our example, we will be looking at a simple 3-color body problem. </p>
+
+<p>Problem: You must fill in the following graph using only 3 colors, such that each vertex does not share an edge with another vertex of the same color</p>
+
+<p>Example Image 1 / Example Image 2</p>
+
+<p>Obviously this is an simple example, but imagine having a graph with ten-thousand vertices!</p>
+
+<p>Zero Knowledge Proof: Let's pretend you hire an intern to solve the problem for you, and they email you after a few weeks claiming they have the solution. Woohoo! Unfortunantly want to be paid before they hand over the solution. They put in a lot of work, and if they just hand over the solution you might skip out on the bill, and they want to be protected from getting scammed! But you don't want to fork over the money without knowing they actually found a solution, for all you know they could have just filled the graph in with random numbers and be scamming you!</p>
+
+<p>Protocol: You and the intern head to a warehouse and draw the graph on the floor. You leave the room, and the intern randomly shuffles their solution, swapping out the colors in the vertices on the floor, and then covers the vertices with tophats</p>
+
+<p>At this point, you enter the room and are allowed to randomly pick any edge, remove the tophats, and reveal the two connected vertices</p>
+
+<p>If the intern was telling the truth, it does not matter which edge you pick, and the two colors will not match (as is required)</p>
+
+<p>If the intern was lying, there is a chance that you will reveal a mistake, where two verticies of the same color touch. The "best case" scenerio for a cheating intern is to fill the graph out correctly for all edges but one. On a graph with E edges, a cheating intern has a (E-1)/E probability of getting off scot-free. For example if the graph had 100 edges, there is a 99% chance of getting away with one bad edge.</p>
+
+<p>Obviously, you want to be very confident, so you will repeat this trial several times. You step out of the warehouse and the intern permutates the colors again in secret. In order to be very confident (negligible probability of being scammed), you complete E^2 trials.</p>
+
+<p>Because the colors are randomly shuffled, and you can only ever see one edge at a time, it is impossible for you to reconstruct the solution.</p>
+
+<p>You try!</p>
+
+  <p>You are the "verifier", pick an edge to reveal the colors below.</p>
   </td></tr>
-  <tr><td id="main" colspan="3" style="height:400px"><svg style="height: 380px; width: 600px; cursor: default;"><g><line x1="300" y1="40" x2="119" y2="187" stroke="black" stroke-width="1px"></line><line x1="300" y1="40" x2="481" y2="187" stroke="black" stroke-width="1px"></line><line x1="481" y1="187" x2="425" y2="359" stroke="black" stroke-width="1px"></line><line x1="175" y1="359" x2="425" y2="359" stroke="black" stroke-width="1px"></line><line x1="119" y1="187" x2="175" y2="359" stroke="black" stroke-width="1px"></line><line x1="300" y1="40" x2="300" y2="88" stroke="black" stroke-width="1px"></line><line x1="119" y1="187" x2="175" y2="191" stroke="black" stroke-width="1px"></line><line x1="481" y1="187" x2="420" y2="191" stroke="black" stroke-width="1px"></line><line x1="175" y1="359" x2="215" y2="311" stroke="black" stroke-width="1px"></line><line x1="425" y1="359" x2="385" y2="311" stroke="black" stroke-width="1px"></line><line x1="420" y1="191" x2="175" y2="191" stroke="black" stroke-width="1px"></line><line x1="420" y1="191" x2="215" y2="311" stroke="black" stroke-width="1px"></line><line x1="175" y1="191" x2="385" y2="311" stroke="black" stroke-width="1px"></line><line x1="300" y1="88" x2="385" y2="311" stroke="black" stroke-width="1px"></line><line x1="300" y1="88" x2="215" y2="311" stroke="black" stroke-width="1px"></line></g><g><line x1="300" y1="40" x2="119" y2="187" stroke="rgba(255,255,255,0)" stroke-width="15px" style="cursor: pointer;"></line><line x1="300" y1="40" x2="481" y2="187" stroke="rgba(255,255,255,0)" stroke-width="15px" style="cursor: pointer;"></line><line x1="481" y1="187" x2="425" y2="359" stroke="rgba(255,255,255,0)" stroke-width="15px" style="cursor: pointer;"></line><line x1="175" y1="359" x2="425" y2="359" stroke="rgba(255,255,255,0)" stroke-width="15px" style="cursor: pointer;"></line><line x1="119" y1="187" x2="175" y2="359" stroke="rgba(255,255,255,0)" stroke-width="15px" style="cursor: pointer;"></line><line x1="300" y1="40" x2="300" y2="88" stroke="rgba(255,255,255,0)" stroke-width="15px" style="cursor: pointer;"></line><line x1="119" y1="187" x2="175" y2="191" stroke="rgba(255,255,255,0)" stroke-width="15px" style="cursor: pointer;"></line><line x1="481" y1="187" x2="420" y2="191" stroke="rgba(255,255,255,0)" stroke-width="15px" style="cursor: pointer;"></line><line x1="175" y1="359" x2="215" y2="311" stroke="rgba(255,255,255,0)" stroke-width="15px" style="cursor: pointer;"></line><line x1="425" y1="359" x2="385" y2="311" stroke="rgba(255,255,255,0)" stroke-width="15px" style="cursor: pointer;"></line><line x1="420" y1="191" x2="175" y2="191" stroke="rgba(255,255,255,0)" stroke-width="15px" style="cursor: pointer;"></line><line x1="420" y1="191" x2="215" y2="311" stroke="rgba(255,255,255,0)" stroke-width="15px" style="cursor: pointer;"></line><line x1="175" y1="191" x2="385" y2="311" stroke="rgba(255,255,255,0)" stroke-width="15px" style="cursor: pointer;"></line><line x1="300" y1="88" x2="385" y2="311" stroke="rgba(255,255,255,0)" stroke-width="15px" style="cursor: pointer;"></line><line x1="300" y1="88" x2="215" y2="311" stroke="rgba(255,255,255,0)" stroke-width="15px" style="cursor: pointer;"></line></g><g><circle cx="300" cy="40" r="10" fill="black"></circle><circle cx="119" cy="187" r="10" fill="black"></circle><circle cx="481" cy="187" r="10" fill="black"></circle><circle cx="175" cy="359" r="10" fill="black"></circle><circle cx="425" cy="359" r="10" fill="black"></circle><circle cx="300" cy="88" r="10" fill="black"></circle><circle cx="175" cy="191" r="10" fill="black"></circle><circle cx="420" cy="191" r="10" fill="black"></circle><circle cx="215" cy="311" r="10" fill="black"></circle><circle cx="385" cy="311" r="10" fill="black"></circle></g></svg></td></tr>
+  <tr><td id="main" colspan="3" style="height:400px"><svg style="height: 380px; width: 600px; cursor: default;"><defs>
+    <marker id="Triangle" viewBox="0 0 10 10" refX="0" refY="5" markerUnits="strokeWidth" markerWidth="4" markerHeight="3" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z"></path>
+    </marker>
+  </defs>
+      <text dx="400" dy="200">Pick a Graph</text>
+      <path d="M 310 200 L 400 280" fill="none" stroke="black" stroke-width="30" marker-end="url(#Triangle)"></path></svg></td></tr>
   <tr><td>
     <input type="submit" value="Reveal" id="reveal">
     <label for="turbo">Turbo:</label> <input type="checkbox" id="turbo">
   </td><td style="text-align:center">Confidence: <span id="confidence" style="color: black;">0</span>%
   </td><td style="text-align:right">
-    <input type="submit" value="Graph 1" id="honest" onclick="setup('honest')">
-    <input type="submit" value="Graph 2" id="tricky" onclick="setup('tricky')">
+    <input type="submit" value="Honest Intern" id="honest" onclick="setup('honest')">
+    <input type="submit" value="Dishonest Intern" id="tricky" onclick="setup('tricky')">
   </td></tr>
   <tr><td colspan="3" style="padding-top:2em;">
-  <p>You may notice
-  that the colors change between different rounds of the game; although
-  the prover is not allowed to change its mind once it offers you a
-  choice, it's allowed to mix up the colorings between choices.  Indeed, if it didn't,
-  you could reverse engineer the full coloring (making this not a
-  zero-knowledge proof.) You can check that the application is not reneging
-  on its promises by pressing the <em>Reveal</em> button. (Since this
-  tells you what the true coloring is, this is obviously not part
-  of the zero-knowledge protocol!)</p>
-  <p>Once you get tired of clicking edges manually, you can select Turbo
-  to speed things up.  As you play more rounds of the protocol, the
-  probability that the prover is lying (the graph is not 3-colorable)
-  but has managed to get lucky in the edges you picked goes down: this
-  is reflected in the confidence metric.</p>
-  <p><em>Exercise 1:</em> Currently, you can only select adjacent pairs
-  of nodes to check.  Would the proof still be zero knowledge if you
-  could pick arbitrary pairs of nodes to check?</p>
-  <p><em>Exercise 2:</em> The equation currently being used for confidence is <code>1-(1/E)^n</code>, where <code>E</code> is the number of edges in the graph, and <code>n</code> is the number of trials run. Is this the correct equation? Why is there no prior?</p>
+  <p>Note that the colors change between each trial. The prover must mix up the colorings between each trial, or else you could reverse engineer the solution.</p>
+  <p>Click Turbo to speed things up. As you run more trials the probability that the prover is telling the trush (they have the correct solution)
+  increases.</p>
+  <p>The first graph has a solution, and we can quickly obtain 99% confidence that the prover is not pulling the wool over our eyes. The second graph does not have a solution. After a few runs we will discover the shared edge and refuse to pay for the "solution", which isn't correct at all!</p>
   </td></tr>
   </tbody></table>
+  
+  
+  This small game demonstrates the three properties of zero-knowledge proof:
 
+<ul><li>Completeness: if the statement (this graph has a solution) is true, a honest verifier will be convinced of this fact by an honest prover.</li>
+<li>Soundness: if the statement is false, no cheating prover can convince the honest verifier that it is true, except with some small probability. The dishonest intern (the second graph with no solution) is quickly discovered.</li>
+<li>Zero-knowledge: if the statement is true, no cheating verifier learns anything other than the fact that the statement is true. In our example, no amount of trials run allows us to reconstruct the solution, which remains secret, even though we can verify that the solution is correct.</li>
+</ul>
 
+Non-Interactive Proof
+
+<p>The previous game works fine, but only if the prover is there to play along and shuffle colors with us for thousands of trial runs. The previous game was INTERACTIVE. We can improve on this be changing how it works and making it NON-INTERACTIVE. The prover 
+
+ 
 </body>
-
 </html>
