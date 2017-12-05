@@ -8,449 +8,36 @@ canvas {
     background-color: #f1f1f1;
 }
 </style>
-<script>
-
-var POINTS_1 = {
-  'a': [300,40],
-  'b': [119,187],
-  'c': [481,187],
-  'd': [175,359],
-  'e': [425,359], 
-  'f': [300, 88],
-  'g': [175, 191],
-  'h': [420, 191],
-  'i': [215, 311],
-  'j': [385, 311],
-};
-var COLORS_1 = {
-  'a': 0,
-  'b': 1,
-  'c': 1,
-  'd': 0,
-  'e': 2,
-  'f': 2,
-  'g': 2,
-  'h': 0,
-  'i': 1,
-  'j': 0,
-};
-var DOT_1 = [
-  ['a', 'b'],
-  ['a', 'c'],
-  ['c', 'e'],
-  ['d', 'e'],
-  ['b', 'd'],
-  ['a', 'f'],
-  ['b', 'g'],
-  ['c', 'h'],
-  ['d', 'i'],
-  ['e', 'j'],
-  ['h', 'g'],
-  ['h', 'i'],
-  ['g', 'j'],
-  ['f', 'j'],
-  ['f', 'i'],
-];
-
-var POINTS_2 = {
-  'a': [100, 200],
-  'b': [200, 50],
-  'c': [200, 150],
-  'd': [200, 250],
-  'e': [200, 350],
-  'f': [300, 100],
-  'g': [300, 300],
-  'h': [400, 50],
-  'i': [400, 150],
-  'j': [400, 250],
-  'k': [400, 350],
-  'l': [500, 200],
-};
-var COLORS_2_1 = {
-  'a': 0,
-  'b': 1,
-  'c': 2,
-  'd': 1,
-  'e': 0,
-  'f': 0,
-  'g': 2,
-  'h': 1,
-  'i': 0,
-  'j': 1,
-  'k': 0,
-  'l': 2,
-}
-var COLORS_2_2 = {
-  'a': 2,
-  'b': 2,
-  'c': 0,
-  'd': 1,
-  'e': 2,
-  'f': 1,
-  'g': 0,
-  'h': 0,
-  'i': 0,
-  'j': 2,
-  'k': 1,
-  'l': 1,
-}
-var COLORS_2_3 = {
-  'a': 1,
-  'b': 1,
-  'c': 2,
-  'd': 0,
-  'e': 2,
-  'f': 0,
-  'g': 1,
-  'h': 0,
-  'i': 1,
-  'j': 0,
-  'k': 2,
-  'l': 2,
-}
-var COLORS_2_4 = { // should be weighted half
-  'a': 0,
-  'b': 0,
-  'c': 1,
-  'd': 2,
-  'e': 0,
-  'f': 2,
-  'g': 1,
-  'h': 0,
-  'i': 1,
-  'j': 0,
-  'k': 2,
-  'l': 2,
-}
-var DOT_2 = [
-  ['a', 'c'],
-  ['a', 'd'],
-  ['a', 'l'],
-  ['b', 'c'],
-  ['b', 'f'],
-  ['b', 'k'],
-  ['c', 'd'],
-  ['c', 'f'],
-  ['d', 'g'],
-  ['d', 'e'],
-  ['e', 'g'],
-  ['e', 'h'],
-  ['f', 'h'],
-  ['f', 'i'],
-  ['g', 'j'],
-  ['g', 'k'],
-  ['h', 'i'],
-  ['i', 'j'],
-  ['j', 'k'],
-  ['l', 'i'],
-  ['l', 'j'],
-];
-
-var COLORS = ['Blue', 'Red', 'Green'];
-// small number of permutations, so just list them all:
-var PERMUTATIONS = [[0,1,2], [0,2,1], [1,0,2], [1,2,0], [2,0,1], [2,1,0]];
-
-// Utility functions
-
-function random_pick(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-function random_permutation() {
-  return random_pick(PERMUTATIONS);
-}
-function mk(n) {
-  return document.createElementNS("http://www.w3.org/2000/svg",n);
-};
-function get(id) { return document.getElementById(id); }
-function letp(args, f) {
-  // fake let-bindings.
-  f.apply(this, args);
-};
-function mapWithKey(obj, f) {
-  for (var key in obj) {
-    if (obj.hasOwnProperty(key)) {
-      f(key, obj[key]);
-    }
-  }
-}
-function empty(node) {
-  // removes all children from a node
-  while (node.hasChildNodes()) {
-    node.removeChild(node.lastChild);
-  }
-}
-NodeList.prototype.map = function(f) {
-  for (var i = 0; i < this.length; i++) {
-    f(this[i]);
-  }
-}
-
-// shift by two {0,1,2,3,4,5} * 2
-var base_equivalence = ['a', 'c', 'b', 'f', 'h', 'i', 'l', 'j', 'k', 'g', 'e', 'd'];
-var shifted_equivalence = base_equivalence.concat(base_equivalence);
-function id_equivalence() {
-  var r = {};
-  mapWithKey(globalPoints, function (name, x) {
-    r[name] = name;
-  });
-  return r;
-}
-function random_tricky_equivalence() {
-  var r = {};
-  var start = Math.floor(Math.random() * 6) * 2;
-  base_equivalence.forEach(function (el, i, x) {
-    r[shifted_equivalence[i+start]] = el;
-  });
-  return r;
-}
-
-function init() {
-  get("reveal").disabled = 1;
-  get("turbo").disabled = 1;
-  get("turbo").checked = 0;
-}
-
-var globalPoints = false;
-var globalDot = false;
-var globalAuto = false;
-var globalTricky = false;
-var globalTrials = 0;
-
-function setup(name) {
-  if (name == 'honest') {
-    globalPoints = POINTS_1;
-    globalColors = [COLORS_1];
-    globalDot = DOT_1;
-    globalTricky = false;
-  } else {
-    globalPoints = POINTS_2;
-    // 2_4 weighted half because it has more symmetries
-    globalColors = [COLORS_2_1, COLORS_2_2, COLORS_2_3, COLORS_2_1, COLORS_2_2, COLORS_2_3, COLORS_2_4];
-    globalDot = DOT_2;
-    globalTricky = true;
-  }
-  globalAuto = false;
-  get("turbo").checked = 0;
-  globalTrials = 0;
-  get("confidence").textContent = "0";
-  main();
-}
-
-var rescheduleTimer = -1;
-function reschedule(n, f) {
-  clearTimeout(rescheduleTimer);
-  rescheduleTimer = setTimeout(f, n);
-}
-
-// how is confidence calculated?  Assume a graph is not three-colorable.
-// Then the best a cheater can do is provide you with a coloring that
-// has one edge which is "bad".  The probability of getting that edge
-// is then 1/E.
-function main() {
-  // construct svg on the fly
-  var gMain = get("main");
-  empty(gMain); // RESET
-  // handles to SVG
-  var gSvg = mk("svg");
-  gSvg.style.height = "380px";
-  gSvg.style.width = "600px";
-  gSvg.style.cursor = "default";
-  gMain.appendChild(gSvg);
-  var gEdges = mk("g");
-  var gNodes = mk("g");
-  var gHover = mk("g");
-  gSvg.appendChild(gEdges);
-  gSvg.appendChild(gHover);
-  gSvg.appendChild(gNodes);
-  var gLookup = {};
-  var gChoices = [];
-  var gPerm = random_permutation();
-  var gRevealed = false;
-  var gReveal = get("reveal");
-  var gTurbo = get("turbo");
-  var gConfidence = get("confidence");
-  var gEquivalence;
-  if (globalTricky) {
-    gEquivalence = random_tricky_equivalence();
-  } else {
-    gEquivalence = id_equivalence();
-  }
-  gConfidence.style.color = "black";
-  gReveal.disabled = 0;
-  gReveal.value = "Reveal";
-  gTurbo.disabled = false;
-  gReveal.onclick = function () { // RESET
-    reschedule(0, function () {});
-    gNodes.childNodes.map(function (x) {
-      x.reveal();
-    });
-    gSvg.style.cursor = "pointer";
-    gRevealed = true;
-    gReveal.value = "Reset";
-    gReveal.onclick = main;
-  };
-  gTurbo.onclick = function () {
-    if (gTurbo.checked) {
-      globalAuto = true;
-      main();
-    } else {
-      globalAuto = false;
-      reschedule(0, main);
-    }
-  };
-  // I need this to run *before* the internal handlers.
-  gSvg.addEventListener('click', function () {
-    if (gRevealed) {
-      main();
-    }
-  }, true);
-  // setup nodes
-  var gColors = random_pick(globalColors);
-  mapWithKey(globalPoints, function (ptname, pt) {
-    var shape = mk("circle");
-    shape.setAttribute("cx", pt[0]);
-    shape.setAttribute("cy", pt[1]);
-    shape.setAttribute("r", 10);
-    if (!globalAuto) {
-      shape.setAttribute("fill", "black");
-    } else {
-      shape.setAttribute("fill", "grey");
-    };
-    shape.selected = 0;
-    shape.color = gPerm[gColors[gEquivalence[ptname]]];
-    shape.reveal = function() {
-      if (!shape.revealed) {
-        shape.setAttribute("fill", COLORS[shape.color]);
-        shape.revealed = true;
-      }
-    };
-    shape.revealed = false;
-    gNodes.appendChild(shape);
-    gLookup[ptname] = shape;
-  });
-  // setup edges
-  globalDot.map( function(edge) {
-    var line = mk("line");
-    // make it easier to actually click the line
-    var hoverBox = mk("line");
-    [line, hoverBox].map( function(x) {
-      x.setAttribute("x1", globalPoints[edge[0]][0]);
-      x.setAttribute("y1", globalPoints[edge[0]][1]);
-      x.setAttribute("x2", globalPoints[edge[1]][0]);
-      x.setAttribute("y2", globalPoints[edge[1]][1]);
-    });
-    if (!globalAuto) {
-      line.setAttribute("stroke", "black");
-    } else {
-      line.setAttribute("stroke", "grey");
-    };
-    line.setAttribute("stroke-width", "1px");
-    hoverBox.setAttribute("stroke", "rgba(255,255,255,0)"); // none doesn't work
-    hoverBox.setAttribute("stroke-width", "15px");
-    if (!globalAuto) {
-      hoverBox.onmouseover = function () {
-        if (!gRevealed) {
-          line.setAttribute("stroke", "cyan");
-          line.setAttribute("stroke-width", "3px");
-        }
-      };
-      hoverBox.onmouseout = function () {
-        if (!gRevealed) {
-          // duplicate
-          line.setAttribute("stroke", "black");
-          line.setAttribute("stroke-width", "1px");
-        }
-      };
-    }
-    var select = function () {
-      if (!gRevealed) {
-        gRevealed = true;
-        gLookup[edge[0]].reveal();
-        gLookup[edge[1]].reveal();
-        var makeGray = function () {
-          gEdges.childNodes.map( function (x) {
-            x.setAttribute("stroke", "gray");
-          });
-          gNodes.childNodes.map( function (x) {
-            if (!x.revealed) {
-              x.setAttribute("fill", "gray");
-            }
-          });
-        };
-        globalTrials++;
-        if (gLookup[edge[0]].color == gLookup[edge[1]].color) {
-          makeGray();
-          gSvg.style.cursor = "pointer";
-          line.setAttribute("stroke-width", "3px");
-          line.setAttribute("stroke", "red");
-          globalTrials = 0;
-          gConfidence.style.color = "red";
-          return false;
-        } else {
-          if (!globalAuto) {
-            makeGray();
-            gSvg.style.cursor = "pointer";
-          };
-          line.setAttribute("stroke-width", "3px");
-          line.setAttribute("stroke", "green");
-          gConfidence.style.color = "black";
-          gConfidence.textContent = Math.min((1-Math.pow(1-1/globalDot.length, globalTrials))*100, 99.99).toFixed(2);
-          return true;
-        }
-      }
-    };
-    if (!globalAuto) {
-      hoverBox.onclick = function () { select(); };
-      hoverBox.style.cursor = "pointer";
-    }
-    gEdges.appendChild(line);
-    gHover.appendChild(hoverBox);
-    gChoices.push(select);
-  });
-  if (globalAuto) {
-    reschedule(0, function () {
-      if(random_pick(gChoices)()) {
-        // nope, try again
-        reschedule(140, function () {
-          main();
-        });
-      } else {
-        // caught him! stop
-      }
-    });
-  }
-}
-
-</script>
-
+<script type="text/javascript" src="js/threeColor.js"></script>
 </head>
-<body onload="init()" style="font-family: Verdana;">
+<body style="font-family: Verdana;">
   <table id="controls" style="margin-left: auto; margin-right: auto;width:600px;">
   <tbody><tr><td colspan="3">
   <h1>Zero Knowledge Proof</h1>
   <p>Below is an interactive demonstration of a <a href="http://en.wikipedia.org/wiki/Zero-knowledge_proof">zero knowledge proof
     protocol</a>. 
+      
 ZK proofs allow a "prover" to convince a "verifier" that they have the solution to some problem, without revealing their actual solution. In our example, we will be looking at a simple 3-color body problem. </p>
 
-<p>Problem: You must fill in the following graph using only 3 colors, such that each vertex does not share an edge with another vertex of the same color</p>
+<p>Example Problem: You must fill in the following graph using only 3 colors, such that each vertex does not share an edge with another vertex of the same color</p>
 
-<p>Example Image 1 / Example Image 2</p>
+<p>This graph is correctly solved / This graph does not have a solution</p>
 
 <p>Obviously this is an simple example, but imagine having a graph with ten-thousand vertices!</p>
 
-<p>Zero Knowledge Proof: Let's pretend you hire an intern to solve the problem for you, and they email you after a few weeks claiming they have the solution. Woohoo! Unfortunantly want to be paid before they hand over the solution. They put in a lot of work, and if they just hand over the solution you might skip out on the bill, and they want to be protected from getting scammed! But you don't want to fork over the money without knowing they actually found a solution, for all you know they could have just filled the graph in with random numbers and be scamming you!</p>
+<p>Zero Knowledge Proof: Let's pretend you hire an intern to solve the problem for you, and they email you after a few weeks claiming they have the solution. Woohoo! Unfortunantly want to be paid before they hand over the solution. They put in a lot of work, and if they just hand over the solution you might skip out on the bill, and they want to be protected from getting scammed! But you also don't want to fork over the money without knowing they actually found a solution, for all you know they could have just filled the graph in with random numbers and be scamming you!</p>
 
-<p>Protocol: You and the intern head to a warehouse and draw the graph on the floor. You leave the room, and the intern randomly shuffles their solution, swapping out the colors in the vertices on the floor, and then covers the vertices with tophats</p>
+<p>The Zero-Knowledge Protocol: You and the intern head to a warehouse and draw the graph on the floor. You leave the room, and the intern randomly shuffles their solution, swapping out the colors in the vertices on the floor, and then covers the vertices with tophats</p>
 
-<p>At this point, you enter the room and are allowed to randomly pick any edge, remove the tophats, and reveal the two connected vertices</p>
+<p>At this point, you enter the room and are allowed to randomly pick any single edge, remove the two tophats, and reveal the connected vertices</p>
 
-<p>If the intern was telling the truth, it does not matter which edge you pick, and the two colors will not match (as is required)</p>
+<p>If the intern was telling the truth, it does not matter which edge you pick, because if their solution was correct, the two colors will not match.</p>
 
-<p>If the intern was lying, there is a chance that you will reveal a mistake, where two verticies of the same color touch. The "best case" scenerio for a cheating intern is to fill the graph out correctly for all edges but one. On a graph with E edges, a cheating intern has a (E-1)/E probability of getting off scot-free. For example if the graph had 100 edges, there is a 99% chance of getting away with one bad edge.</p>
+<p>If the intern was lying, there is a chance that your random guess will reveal their mistake, an edge containing two verticies of the same color. The "best case" scenerio for a cheating intern is to fill the graph out correctly for all edges but one. On a graph with E edges, a cheating intern has a (E-1)/E probability of getting off scot-free. For example if the graph had 100 edges, there is a 99% chance of getting away with one bad edge.</p>
 
-<p>Obviously, you want to be very confident, so you will repeat this trial several times. You step out of the warehouse and the intern permutates the colors again in secret. In order to be very confident (negligible probability of being scammed), you complete E^2 trials.</p>
+<p>Obviously, you want to be very confident, so you will repeat this trial several times. You step out of the warehouse and the intern randomly permutates the colors again in secret. In order to be very confident (negligible probability of being scammed), you need to complete E^2 trials.</p>
 
-<p>Because the colors are randomly shuffled, and you can only ever see one edge at a time, it is impossible for you to reconstruct the solution.</p>
+<p>Because the colors in the solution are randomly shuffled, and you can only ever see one edge at a time, it is impossible for you to reconstruct the solution. At the same time, this protocol allows you to verify with confidence the validity of the solution.</p>
 
 <p>You try!</p>
 
@@ -472,24 +59,23 @@ ZK proofs allow a "prover" to convince a "verifier" that they have the solution 
     <input type="submit" value="Dishonest Intern" id="tricky" onclick="setup('tricky')">
   </td></tr>
   <tr><td colspan="3" style="padding-top:2em;">
-  <p>Note that the colors change between each trial. The prover must mix up the colorings between each trial, or else you could reverse engineer the solution.</p>
-  <p>Click Turbo to speed things up. As you run more trials the probability that the prover is telling the trush (they have the correct solution)
+  <p>Note that the colors are shuffled between each trial. The prover must mix up the colorings between each trial, or else you could reverse engineer the solution.</p>
+  <p>Click Turbo to speed things up. As you run more trials the probability that the prover is telling the truth (they have the correct solution)
   increases.</p>
-  <p>The first graph has a solution, and we can quickly obtain 99% confidence that the prover is not pulling the wool over our eyes. The second graph does not have a solution. After a few runs we will discover the shared edge and refuse to pay for the "solution", which isn't correct at all!</p>
+  <p>The first graph has a solution, and we can quickly obtain >99% confidence that the prover is not pulling the wool over our eyes. The second graph does not have a solution. After a few runs we will discover the shared edge and refuse to pay the cheating intern for their "solution", which isn't valid!</p>
   </td></tr>
   </tbody></table>
   
-  
-  This small game demonstrates the three properties of zero-knowledge proof:
+  A Zero-Knowledge Proof must have three properties:
 
-<ul><li>Completeness: if the statement (this graph has a solution) is true, a honest verifier will be convinced of this fact by an honest prover.</li>
+<ul><li>Completeness: if the statement is true (this graph has a solution), a honest verifier will be convinced of this fact by an honest prover.</li>
 <li>Soundness: if the statement is false, no cheating prover can convince the honest verifier that it is true, except with some small probability. The dishonest intern (the second graph with no solution) is quickly discovered.</li>
-<li>Zero-knowledge: if the statement is true, no cheating verifier learns anything other than the fact that the statement is true. In our example, no amount of trials run allows us to reconstruct the solution, which remains secret, even though we can verify that the solution is correct.</li>
+<li>Zero-knowledge: if the statement is true, no verifier learns anything other than the fact that the statement is true. In our example, no amount of trials ran will ever allow us to reconstruct the solution, which remains secret, even though we can verify that the solution is correct.</li>
 </ul>
 
 Non-Interactive Proof
 
-<p>The previous game works fine, but only if the prover is there to play along and shuffle colors with us for thousands of trial runs. The previous game was INTERACTIVE. We can improve on this be changing how it works and making it NON-INTERACTIVE. The prover 
+<p>The previous game works fine, but only if the prover is there to play along and shuffle colors inbetween our thousands of trial runs. The previous game was INTERACTIVE. We can improve on this be changing how it works and making it NON-INTERACTIVE. Instead of 
 
  
 </body>
